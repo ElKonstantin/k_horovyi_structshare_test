@@ -53,7 +53,7 @@ test.describe('Products ordering using CSV file for guest users', () => {
         // Clicking confirmation order button
         await page.getByRole('button', { name: 'Замовлення підтверджую' }).click();
 
-        // Confirmation page validation
+        // Confirmation page validation - Tests will fall on this step, because they can't pass cloudflare anti-bot checking
         const productNameCfrm = await page.getByText(record.productName);
         await expect(productNameCfrm).toBeVisible();
         const deliveryAddressCfrm = await page.getByText(record.deliveryAddress);

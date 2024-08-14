@@ -1,29 +1,35 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('fs');
-const parse = require('csv-parse');
+const Papa = require('papaparse');
 
-test.describe('Products oredering using csv file for guest users', () => {
+test.describe('Products ordering using CSV file for guest users', () => {
   let records = [];
 
   test.beforeAll(async () => {
-      const parser = fs.createReadStream('e2e/test_data/test_data_structshare.csv').pipe(parse({ columns: true }));
-
-      for await (const record of parser) {
-          records.push(record);
-      }
+    console.log('Reading CSV file');
+    const fileContent = fs.readFileSync('e2e/test_data_structshare.csv', 'utf8');
+    Papa.parse(fileContent, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        records = results.data;
+        console.log('CSV data:', records);
+      },
+    });
   });
-  
-  records.forEach((record) => {
-      test(`Test oredering for ${record.productName}`, async ({ page }) => {
-        
+
+  test('Dynamic test generation', async ({ page }) => {
+    for (const record of records) {
+      await test.step(`Test ordering for ${record.productName}`, async () => {
+        console.log(`Running test for ${record.productName}`);
         await page.goto(record.productUrl);
 
         // productName validation
-        const productNameOnPage = await page.getByRole('heading').textContent();
+        const productNameOnPage = await page.getByRole('heading', { name: 'Кавоварка рожкова CECOTEC' }).textContent();
         expect(productNameOnPage.trim()).toBe(record.productName);
 
         // Clicking the Buy and Checkout button
-        await page.getByText('Купити').click();
+        await page.locator('rz-product-buy-btn').getByLabel('Купити').click();
         await page.locator('data-testid=cart-receipt-submit-order').click();
 
         // Entering the phone from CSV 
@@ -35,7 +41,7 @@ test.describe('Products oredering using csv file for guest users', () => {
         await page.keyboard.press('Enter');
 
         // Checking the post-payment method
-        const paymentType =  await page.getByRole('button', { name: 'Оплата під час отримання товару Змінити' });
+        const paymentType = await page.getByRole('button', { name: 'Оплата під час отримання товару Змінити' });
         const buttonText = await paymentType.textContent();
         expect(buttonText.trim()).toBe(record.paymentMethod);
 
@@ -50,14 +56,12 @@ test.describe('Products oredering using csv file for guest users', () => {
         // Confirmation page validation
         const productNameCfrm = await page.getByText(record.productName);
         await expect(productNameCfrm).toBeVisible();
-        const delieveryAddressCfrm = await page.getByText(record.deliveryAddress);
-        await expect(delieveryAddressCfrm).toBeVisible();
-        const fullName = `${record.userName} ${record.userSurname}`;
-        const fullNameCfrm = await page.getByText(fullName);
+        const deliveryAddressCfrm = await page.getByText(record.deliveryAddress);
+        await expect(deliveryAddressCfrm).toBeVisible();
         await expect(fullNameCfrm).toBeVisible();
         const phoneCfrm = await page.getByText(record.userPhone);
         await expect(phoneCfrm).toBeVisible();
-
       });
+    }
   });
 });

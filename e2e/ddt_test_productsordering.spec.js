@@ -7,7 +7,7 @@ test.describe('Products ordering using CSV file for guest users', () => {
 
   test.beforeAll(async () => {
     console.log('Reading CSV file');
-    const fileContent = fs.readFileSync('e2e/test_data_structshare.csv', 'utf8');
+    const fileContent = fs.readFileSync('e2e/test_data/test_data_structshare.csv', 'utf8');
     Papa.parse(fileContent, {
       header: true,
       skipEmptyLines: true,
